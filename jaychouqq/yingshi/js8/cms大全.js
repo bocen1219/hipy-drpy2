@@ -1,64 +1,77 @@
+//聚合平台3.js 修复版：兼容 http://192.129.140.23:5757/api/荐片[优]?pwd=dzyyds
 import { Crypto, _ } from 'assets://js/lib/cat.js';
 let siteKey = '';
 let siteType = 0;
 let extendObj = {};
-
-// 源配置，完全复刻py里sources
+// 源配置，完全复刻py里sources；s35新增【荐片[优]】源
 const SOURCES = {
-   's1': { 'name': '🎬香蕉', 'api': 'https://www.xiangjiaozyw.com/api.php/provide/vod/' },
-    's2': { 'name': '💧番茄', 'api': 'http://fhapi9.com/api.php/provide/vod/' },
-    's3': { 'name': '🧸嘿嘿', 'api': 'https://api.heiapi.cc/api.php/provide/vod/' },
-    's4': { 'name': '📺鲨鱼', 'api': 'https://shayuzy5.com/api.php/provide/vod/' },
-    's5': { 'name': '🔥麻花', 'api': 'https://19q.cc/api.php/provide/vod/' },
-    's6': { 'name': '📺搜AV', 'api': 'https://souavzy.net/api.php/provide/vod/' },
-    's7': { 'name': '📺精品', 'api': 'https://www.jingpinx.com/api.php/provide/vod/' },
-    's8': { 'name': '⚡极品', 'api': 'https://jipinvip1.com/api.php/provide/vod/' },
-    's9': { 'name': '📺美少女', 'api': 'https://www.msnii.com/api/json.php' },
-    's10': { 'name': '📺饮水机', 'api': 'https://www.xrbsp.com/api/json.php' },
-    's11': { 'name': '📺香奶儿', 'api': 'https://www.gdlsp.com/api/json.php' },
-    's12': { 'name': '🐯白嫖', 'api': 'https://www.kxgav.com/api/json.php' },
-    's13': { 'name': '📺小师妹', 'api': 'https://www.afasu.com/api/json.php' },
-    's14': { 'name': '📺潢AV', 'api': 'https://www.pgxdy.com/api/json.php' },
-    's15': { 'name': '📺杏吧', 'api': 'https://api.xgbbk8.com/api.php/provide/vod/' },
+    's1': { 'name': '🎬电影天堂', 'api': 'http://caiji.dyttzyapi.com/api.php/provide/vod/from/dyttm3u8/at/json' },
+    's2': { 'name': '💧无水印', 'api': 'https://api.wsyzy.net/api.php/provide/vod' },
+    's3': { 'name': '🧸量子', 'api': 'https://cj.lziapi.com/api.php/provide/vod' },
+    's4': { 'name': '📺1080资源', 'api': 'https://api.1080zyku.com/inc/api_mac10.php' },
+    's5': { 'name': '🔥大众资源', 'api': 'https://cdn.dzzyapi.com/api.php/provide/vod/' },
+    's6': { 'name': '📺天涯', 'api': 'https://tyyszy.com/api.php/provide/vod' },
+    's7': { 'name': '📺暴风', 'api': 'https://bfzyapi.com/api.php/provide/vod' },
+    's8': { 'name': '⚡索尼闪电', 'api': 'https://xsd.sdzyapi.com/api.php/provide/vod' },
+    's9': { 'name': '📺索尼', 'api': 'https://suoniapi.com/api.php/provide/vod' },
+    's10': { 'name': '📺红牛', 'api': 'https://www.hongniuzy2.com/api.php/provide/vod' },
+    's11': { 'name': '📺茅台', 'api': 'https://caiji.maotaizy.cc/api.php/provide/vod' },
+    's12': { 'name': '🐯虎牙', 'api': 'https://www.huyaapi.com/api.php/provide/vod' },
+    's13': { 'name': '📺豆瓣', 'api': 'https://caiji.dbzy.tv/api.php/provide/vod' },
+    's14': { 'name': '📺豆瓣2', 'api': 'https://dbzy.tv/api.php/provide/vod' },
+    's15': { 'name': '📺豪华', 'api': 'https://hhzyapi.com/api.php/provide/vod' },
     's16': { 'name': '📺CK资源', 'api': 'https://ckzy.me/api.php/provide/vod' },
-    's17': { 'name': '📺越南', 'api': 'https://vnzyz.com/api.php/provide/vod '},
-    's18': { 'name': '📺15', 'api': 'https://155api.com/api.php/provide/vod/' },
-    's19': { 'name': '📺91AV', 'api': 'https://91av.cyou/api.php/provide/vod/' },
-    's20': { 'name': '🌕红楼', 'api': 'https://www.hlzy.store/api.php/provide/vod/' },
-    's21': { 'name': '📺小鸡', 'api': 'https://api.xiaojizy.live/provide/vod/' },
-    's22': { 'name': '📺大奶', 'api': 'https://apidanaizi.com/api.php/provide/vod/' },
-    's23': { 'name': '📺豆豆', 'api': 'https://api.douapi.cc/api.php/provide/vod/' },
-    's24': { 'name': '📺黑料', 'api': 'https://heiliaozyapi.com/api.php/provide/vod/' },
-    's25': { 'name': '🌸仓库', 'api': 'https://hsckzy888.com/api.php/provide/vod/' },
-    's26': { 'name': '🐮玉兔', 'api': 'https://apiyutu.com/api.php/provide/vod' },
-    's27': { 'name': '☁️精东', 'api': 'http://chujia.cc/api.php/provide/vod/' },
-    's28': { 'name': '🏎奶香', 'api': '"https://naixxzy.com/api.php/provide/vod' },
-    's29': { 'name': '🦅乐播', 'api': 'https://lbapi9.com/api.php/provide/vod' },
-    's30': { 'name': '⚡JKUN', 'api': 'https://jkunzyapi.com/api.php/provide/vod' },
-    's31': { 'name': '👑桃花', 'api': 'https://thzy1.me/api.php/provide/vod/' },
-    's32': { 'name': '🍃百花', 'api': 'https://bhziyuan.com/api.php/provide/vod/' },
-    's33': { 'name': '🐾老色', 'api': 'https://apilsbzy1.com/api.php/provide/vod/' },
-    's34': { 'name': '🐾辣椒', 'api': 'https://apilj.com/api.php/provide/vod' },
-    's35': { 'name': '🐾javbus', 'api': 'https://javbus.sbs/api.php/provide/vod/' },
-    's36': { 'name': '🐾奥斯卡', 'api': 'https://aosikazy8.com/api.php/provide/vod' },
-    's37': { 'name': '🐾火速', 'api': 'https://api.huosuapi.cc/api.php/provide/vod/' },
-    's38': { 'name': '🐾聚合2', 'api': 'http://150.109.94.44:1112/api.php/provide/vod/' },
-    's39': { 'name': '🐾CK百货', 'api': 'https://ckbh1.xyz/api.php/provide/vod/' },
-    's40': { 'name': '🐾番茄', 'api': 'https://fqzy.me/api.php/provide/vod/' },
-    's41': { 'name': '🐾森林', 'api': 'https://slapibf.com/api.php/provide/vod/' },
-    's42': { 'name': '🐾大地', 'api': 'https://dadiapi.com/feifei2/' },
-    's43': { 'name': '🐾色猫', 'api': 'https://caiji.semaozy.net/inc/apijson_vod.php' },
-    's44': { 'name': '🐾滴滴', 'api': 'https://api.ddapi.cc/api.php/provide/vod/' },
-    's45': { 'name': '🐾91', 'api': 'https://91md.me/api.php/provide/vod/' },
-    's46': { 'name': '🐾细胞', 'api': 'https://www.xxibaozyw.com/api.php/provide/vod/' },
-    's47': { 'name': '📺湿园', 'api': 'https://xxavs.com/api.php/provide/vod' }
+    's17': { 'name': '📺U酷', 'api': 'https://api.ukuapi.com/api.php/provide/vod' },
+    's18': { 'name': '📺ikun', 'api': 'https://ikunzyapi.com/api.php/provide/vod' },
+    's19': { 'name': '📺无尽', 'api': 'https://api.wujinapi.cc/api.php/provide/vod' },
+    's20': { 'name': '🌕光速', 'api': 'https://api.guangsuapi.com/api.php/provide/vod' },
+    's21': { 'name': '📺卧龙', 'api': 'https://collect.wolongzyw.com/api.php/provide/vod' },
+    's22': { 'name': '📺新浪', 'api': 'https://api.xinlangapi.com/xinlangapi.php/provide/vod' },
+    's23': { 'name': '📺旺旺', 'api': 'https://api.wwzy.tv/api.php/provide/vod' },
+    's24': { 'name': '📺最大', 'api': 'https://api.zuidapi.com/api.php/provide/vod' },
+    's25': { 'name': '🌸樱花', 'api': 'https://m3u8.apiyhzy.com/api.php/provide/vod' },
+    's26': { 'name': '🐮牛牛', 'api': 'https://api.niuniuzy.me/api.php/provide/vod' },
+    's27': { 'name': '☁️百度云', 'api': 'https://api.apibdzy.com/api.php/provide/vod' },
+    's28': { 'name': '🏎速播', 'api': 'https://subocaiji.com/api.php/provide/vod' },
+    's29': { 'name': '🦅金鹰', 'api': 'https://jinyingzy.com/api.php/provide/vod' },
+    's30': { 'name': '⚡闪电', 'api': 'https://sdzyapi.com/api.php/provide/vod' },
+    's31': { 'name': '👑非凡', 'api': 'https://cj.ffzyapi.com/api.php/provide/vod' },
+    's32': { 'name': '🍃飘零', 'api': 'https://p2100.net/api.php/provide/vod' },
+    's33': { 'name': '🐾魔爪', 'api': 'https://mozhuazy.com/api.php/provide/vod' },
+    's34': { 'name': '📺魔都', 'api': 'https://www.mdzyapi.com/api.php/provide/vod' },
+    // 新增：荐片[优]源，原样填写带中文[]的链接，内部自动编码
+    's35': { 'name': '🎞荐片[优]', 'api': 'http://192.129.140.23:5757/api/荐片[优]?pwd=dzyyds' }
 };
-
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 const DEFAULT_HEADERS = { "User-Agent": UA };
 
+/**
+ * 【新增】修复URL路径中文、[]、()保留字符，不破坏query参数
+ * @param {string} rawUrl 原始url
+ * @returns {string} 处理完成可请求url
+ */
+function fixUrlSpecialChar(rawUrl) {
+    if (!rawUrl) return rawUrl;
+    try {
+        const urlObj = new URL(rawUrl);
+        return urlObj.href;
+    } catch (e) {
+        let qIndex = rawUrl.indexOf("?");
+        let pathStr = rawUrl;
+        let queryStr = "";
+        if (qIndex > -1) {
+            pathStr = rawUrl.substring(0, qIndex);
+            queryStr = rawUrl.substring(qIndex);
+        }
+        const temp = new URL(pathStr, "http://127.0.0.1");
+        return temp.href.replace("http://127.0.0.1", "") + queryStr;
+    }
+}
+
 async function request(url, optHeaders = {}, body) {
     try {
+        //【新增】统一预处理特殊字符URL，所有请求自动修复
+        url = fixUrlSpecialChar(url);
         const headers = Object.assign({}, DEFAULT_HEADERS, optHeaders || {});
         const res = await req(url, {
             method: body ? "POST" : "GET",
@@ -72,11 +85,9 @@ async function request(url, optHeaders = {}, body) {
         return "";
     }
 }
-
 function b64EncodeUtf8(str) {
     return Crypto.enc.Base64.stringify(Crypto.enc.Utf8.parse(str || ""));
 }
-
 function b64DecodeUtf8(b64) {
     try {
         return Crypto.enc.Utf8.stringify(Crypto.enc.Base64.parse(b64 || ""));
@@ -84,7 +95,6 @@ function b64DecodeUtf8(b64) {
         return "";
     }
 }
-
 function safeJson(str) {
     try {
         if (!str) return null;
@@ -93,11 +103,9 @@ function safeJson(str) {
         return null;
     }
 }
-
 function text(v) {
     return String(v == null ? "" : v).trim();
 }
-
 function fixPicUrl(url) {
     url = text(url);
     if (!url) return "";
@@ -105,7 +113,6 @@ function fixPicUrl(url) {
     if (url.startsWith("http://") || url.startsWith("https://")) return url;
     return "";
 }
-
 // 复刻py clean_item
 function cleanItem(item, sourceKey, sourceName, isDetail = false) {
     const o = Object.assign({}, item);
@@ -123,7 +130,6 @@ function cleanItem(item, sourceKey, sourceName, isDetail = false) {
     delete o.vod_down_url;
     return o;
 }
-
 async function loadSourceFilter(sourceKey, sourceApi) {
     const url = `${sourceApi}?ac=list`;
     const html = await request(url);
@@ -136,7 +142,6 @@ async function loadSourceFilter(sourceKey, sourceApi) {
     }
     return { sourceKey, vals };
 }
-
 async function init(cfg) {
     try {
         siteKey = cfg.skey;
@@ -164,7 +169,6 @@ async function init(cfg) {
         extendObj = { classes: [], filter: {} };
     }
 }
-
 function home(filter) {
     try {
         return JSON.stringify({
@@ -175,12 +179,10 @@ function home(filter) {
         return JSON.stringify({ class: [], filters: {} });
     }
 }
-
 async function homeVod() {
     // 原py homeContent list为空
     return JSON.stringify({ list: [] });
 }
-
 async function category(tid, pg, filter, ext) {
     pg = Number(pg) || 1;
     try {
@@ -211,7 +213,6 @@ async function category(tid, pg, filter, ext) {
         return JSON.stringify({ list: [], page: pg, pagecount: 0 });
     }
 }
-
 async function searchOne(sourceKey, sourceObj, keyword, pg) {
     const url = `${sourceObj.api}?ac=detail&wd=${encodeURIComponent(keyword)}&pg=${pg}`;
     const html = await request(url);
@@ -226,7 +227,6 @@ async function searchOne(sourceKey, sourceObj, keyword, pg) {
     }
     return { list: out, pagecount: Number(data.pagecount || 1) };
 }
-
 async function search(key, quick, pg) {
     pg = Number(pg) || 1;
     try {
@@ -256,7 +256,6 @@ async function search(key, quick, pg) {
         return JSON.stringify({ list: [], page: pg, pagecount: 0, land: 1, ratio: 1.33 });
     }
 }
-
 async function detail(vodIdRaw) {
     try {
         if (!vodIdRaw.includes("@@")) return JSON.stringify({ list: [] });
@@ -280,7 +279,6 @@ async function detail(vodIdRaw) {
         return JSON.stringify({ list: [] });
     }
 }
-
 async function play(flag, id, flags) {
     // py里playerContent直接透传id，CAT中透传原始播放串，失败parse=1
     try {
@@ -294,7 +292,6 @@ async function play(flag, id, flags) {
         return JSON.stringify({ parse: 1, url: id, header: { "User-Agent": UA } });
     }
 }
-
 export function __jsEvalReturn() {
     return {
         init,
