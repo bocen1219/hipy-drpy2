@@ -88,6 +88,12 @@
             "url": "https://gh-proxy.org/https://raw.githubusercontent.com/kakaxi-1/IPTV/refs/heads/main/ipv4.txt"
         },
 		{
+            "name": "港澳台",
+            "type": 0,
+            "ua": "okhttp/5.3.2",
+            "url": "https://iptv.852851.xyz/sub/bwQfdMcUYrjq/playlist.m3u"
+        },
+		{
             "name": "台湾4GTV直播",
             "type": 0,
             "ua": "okhttp/5.3.2",
@@ -473,16 +479,10 @@
             "api": "./py/酷我音乐.py"
         },
 		{
-            "key": "呦呦DJ",
+            "key": "djyy",
             "name": "🎵呦呦DJ",
             "type": 3,
-            "api": "csp_Djuu",
-            "searchable": 1,
-            "quickSearch": 0,
-            "changeable": 0,
-            "style": {
-                "type": "list"
-            }
+            "api": "./py/DJ呦呦.py"
         },
 		{
             "key": "影子音乐",
@@ -1893,6 +1893,24 @@
             "api": "./py/飞流视频🍀TG @hshsjk9.py"
         },
 		{
+            "key": "网飞猫影视",
+            "name": "🐈网飞猫影视",
+            "type": 3,
+            "api": "./py/网飞猫影视(关梯).py"
+        },
+		{
+            "key": "ZIP0影视",
+            "name": "🚬ZIP0影视",
+            "type": 3,
+            "api": "./py/ZIP0影视.py"
+        },
+		{
+            "key": "饭搭子影视",
+            "name": "🍗饭搭子影视",
+            "type": 3,
+            "api": "./py/饭搭子影视.py"
+        },
+		{
             "key": "爬虫影视",
             "name": "🐛爬虫影视",
             "type": 1,
@@ -2034,12 +2052,12 @@
             "ext": {
                 "appName": "橘汁",
                 "publicKey": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCr8SzZhjYy+rsya1K09t8d2K50pWFoBkgUqMpKOiW+3IEVKd4eTdvg9RSOjQ82kypL6R9BnsmrS1V8s4PVDwjQbUtYhTPPC9Hz16qY7rpD6m0d2vr09/UpWQ5uOy9PR0QTrsioveZ+DIe9jc3C+zBCu/kZSY/R8stwJoiitki3gwIDAQAB",
-                "dataKey": "OW1WBLFZCLJ0WTNJCDMYEGXWYVP3PT0=",
+                "dataKey": "OW1WBLFZCLJ0WTNJQMRSZ2DYSGNBPT0=",
                 "dataIv": "OC1A06E197EF10CF3F6058CA7A803B5E",
                 "pkg": "com.mxj.wylcjbxyx",
                 "host": "",
                 "site": "https://123-1349250429.cos.ap-shanghai.myqcloud.com/app.txt",
-                "version": "3.0.2.3",
+                "version": "3.0.2.4",
                 "decrypt": "1"
             }
         },
@@ -5137,21 +5155,6 @@
             }
         },
 		{
-            "key": "怀桑",
-            "name": "🌱怀桑影视",
-            "type": 3,
-            "api": "csp_AppQi",
-            "searchable": 1,
-            "changeable": 1,
-            "ext": {
-                "url": "http://110.42.67.130:1226",
-                "dataKey": "kj37zs29q22jk96t",
-                "dataIv": "kj37zs29q22jk96t",
-                "init": "initV122",
-                "ua": "okhttp/3.10.0"
-            }
-        },
-		{
             "key": "蓝鹰",
             "name": "🦅蓝鹰影视",
             "type": 3,
@@ -5179,22 +5182,6 @@
                 "dataIv": "oW5UxZ5kWVr1DI69",
                 "init": "initV122",
                 "ua": "okhttp/3.10.0"
-            }
-        },
-		{
-            "key": "奇奇",
-            "name": "🐎奇奇影视",
-            "type": 3,
-            "api": "csp_AppQi",
-            "searchable": 1,
-            "changeable": 1,
-            "ext": {
-                "site": "https://yun-1316442804.cos.ap-guangzhou.myqcloud.com/603.txt",
-                "dataKey": "FTgP4Gq8zPiqbt7M",
-                "dataIv": "FTgP4Gq8zPiqbt7M",
-                "init": "initV122",
-                "ua": "okhttp/3.10.0",
-                "search": "searchList8"
             }
         },
 		{
@@ -36123,6 +36110,24 @@
             "type": 3,
             "api": "./js/drpy2.min.js",
             "ext": "./js/去看吧.js"
+        },
+		{
+            "key": "黑猫动漫",
+            "name": "🐈黑猫动漫",
+            "type": 3,
+            "api": "./py/黑猫动漫.py"
+        },
+		{
+            "key": "MiFun",
+            "name": "🍚MiFun动漫",
+            "type": 3,
+            "api": "./py/MiFun动漫.py"
+        },
+		{
+            "key": "动漫巴士",
+            "name": "🚐动漫巴士",
+            "type": 3,
+            "api": "./py/动漫巴士.py"
         },
 		{
             "key": "红果短剧",
