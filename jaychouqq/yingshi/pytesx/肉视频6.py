@@ -117,7 +117,7 @@ class Spider(BaseSpider):
     def isVideoFormat(self, url):
         low = (url or "").lower()
         return any(k in low for k in (
-            ".m3u8", ".mp4", ".flv", ".mkv", ".avi", ".ts", ".mpd", "index.png", "/hls/"
+            ".m3u8", ".mp4", ".flv", ".mkv", ".avi", ".ts", ".mpd", "index.m3u8", "index.jpg", "/hls/"
         ))
 
     def manualVideoCheck(self):
@@ -372,29 +372,77 @@ class Spider(BaseSpider):
         return self.siteUrl + urllib.parse.quote(raw, safe="/?=&:%")
 
     # ---------- 播放解析 ----------
-    def _resolve_hls(self, vid):
-        """请求 /api/hls/{vid}，跟随 302 得到最终 CDN index.png 地址"""
+    def _decrypt_ev(self, d_b64, k):
+        """解密 pageProps.ev：Base64 → 每字节减 k → JSON"""
+        try:
+            raw = base64.b64decode(d_b64)
+            plain = bytes((b - int(k)) & 0xFF for b in raw).decode("utf-8", errors="ignore")
+            return json.loads(plain)
+        except Exception:
+            return {}
+
+    def _extract_video_url_from_html(self, html):
+        """从 __NEXT_DATA__.ev 解密得到 videoUrl（通常是 /api/hls/{id}）"""
+        m = re.search(r'<script\s+id=["\']__NEXT_DATA__["\'][^>]*>([\s\S]*?)</script>', html, re.I)
+        if not m:
+            return ""
+        try:
+            data = json.loads(m.group(1).strip())
+            ev = data.get("props", {}).get("pageProps", {}).get("ev") or {}
+            d = ev.get("d")
+            k = ev.get("k")
+            if d is None or k is None:
+                return ""
+            info = self._decrypt_ev(d, k)
+            return (info.get("videoUrl") or "").strip()
+        except Exception:
+            return ""
+
+    def _to_m3u8_url(self, url):
+        """站点把 HLS 伪装成 index.jpg/png，扩展名改成 m3u8 才能被播放器识别为视频"""
+        if not url:
+            return url
+        u = str(url)
+        for bad in ("index.jpg", "index.png", "index.jpeg"):
+            if bad in u:
+                u = u.replace(bad, "index.m3u8")
+        return u
+
+    def _resolve_hls(self, vid, html=None):
+        """
+        得到可交给播放器的最终地址：
+        1) 若有详情 HTML，先 ev 解密确认路径
+        2) 请求 /api/hls/{vid} 跟随 302，拿到带 auth 的 CDN
+        3) 将 index.jpg/png 改写为 index.m3u8（内容本就是 EXT M3U）
+        """
         api = "%s/api/hls/%s" % (self.siteUrl, vid)
+        path = ""
+        if html:
+            path = self._extract_video_url_from_html(html)
+        if path and path.startswith("/"):
+            api = self.siteUrl + path.split("?")[0]
+        elif path and path.startswith("http"):
+            api = path
+
         try:
             headers = self._headers(referer=self.siteUrl + "/v/" + vid, accept="*/*")
             req = urllib.request.Request(api, headers=headers)
             with self.opener.open(req, timeout=12) as resp:
                 final = resp.geturl() or api
-                # 读一点点确保连通（index.png 约 1KB）
-                _ = resp.read(32)
-                if final and final != api:
-                    return final
-                return final or api
+                body = resp.read(32)
+                # 确认是 m3u8 内容
+                if body.startswith(b"#EXT") or b"#EXT" in body:
+                    return self._to_m3u8_url(final)
+                return self._to_m3u8_url(final or api)
         except urllib.error.HTTPError as e:
-            # 部分环境 302 被转成 HTTPError
             loc = e.headers.get("Location") if e.headers else None
             if loc:
                 if loc.startswith("/"):
                     loc = self.siteUrl + loc
-                return loc
+                return self._to_m3u8_url(loc)
         except Exception:
             pass
-        return api
+        return self._to_m3u8_url(api)
 
     # ---------- 接口 ----------
     def homeContent(self, filter=False):
@@ -465,18 +513,22 @@ class Spider(BaseSpider):
                 if cm:
                     vod_pic = cm.group(1).strip()
 
-            # 预解析最终流地址（修复客户端不跟随 302 导致无法播放）
-            stream = self._resolve_hls(vid)
+            # ev 解密 + 302 跟随，拿到带签名的最终地址
+            stream = self._resolve_hls(vid, html=html)
             api = "%s/api/hls/%s" % (self.siteUrl, vid)
 
-            # 播放列表：优先最终 CDN，其次 API（再由 player 解析）
             play_from = []
             play_url = []
-            if stream and stream != api and ("index.png" in stream or "/hls/" in stream):
+            # 专线：最终 CDN（index.png 为站点 HLS 入口，需带 Referer）
+            if stream:
                 play_from.append("肉视频专线")
                 play_url.append("正片$%s" % stream)
-            play_from.append("API线路")
-            play_url.append("正片$%s" % api)
+            if api and api != stream:
+                play_from.append("API线路")
+                play_url.append("正片$%s" % api)
+            if not play_from:
+                play_from.append("肉视频专线")
+                play_url.append("正片$%s" % api)
 
             content_parts = []
             if tag_str:
@@ -527,7 +579,7 @@ class Spider(BaseSpider):
             "Connection": "keep-alive",
         }
 
-        # 若仍是 API 地址，再解析一次最终流
+        # API 地址再跟随一次 302，确保带 auth
         if "/api/hls/" in play_url:
             try:
                 m = re.search(r'/api/hls/([a-zA-Z0-9]+)', play_url)
@@ -538,15 +590,49 @@ class Spider(BaseSpider):
             except Exception:
                 pass
 
-        return {
+        # 相对路径补全
+        if play_url.startswith("/"):
+            play_url = self.siteUrl + play_url
+
+        # 关键扩展名，避免播放器当图片打开
+        if hasattr(self, "_to_m3u8_url"):
+            play_url = self._to_m3u8_url(play_url)
+        else:
+            play_url = play_url.replace("index.jpg", "index.m3u8").replace("index.png", "index.m3u8")
+
+        result = {
             "parse": 0,
             "jx": 0,
             "url": play_url,
             "header": headers,
         }
+        if any(x in play_url for x in (".m3u8", "/hls/", "/api/hls/", "index.")):
+            result["format"] = "application/x-mpegURL"
+        return result
 
     def localProxy(self, param):
-        pass
+        """可选：把分片 .jpg 改写为 .ts，进一步避免当图片"""
+        try:
+            if not param:
+                return [404, "text/plain", b""]
+            url = param.get("url") or param.get("url") or ""
+            if not url:
+                return [404, "text/plain", b""]
+            import urllib.request as _ur
+            req = _ur.Request(url, headers=self._headers(accept="*/*"))
+            with self.opener.open(req, timeout=15) as resp:
+                body = resp.read()
+            # 若是 m3u8 文本，把分片扩展名 jpg->ts
+            if body[:7] == b"#EXTM3U" or b"#EXTINF" in body[:200]:
+                text = body.decode("utf-8", errors="ignore")
+                text = text.replace(".jpg?", ".ts?").replace(".png?", ".ts?")
+                return [200, "application/vnd.apple.mpegurl", text.encode("utf-8")]
+            # TS 分片
+            if body[:1] == b"G" or body[:1] == bytes([0x47]):
+                return [200, "video/mp2t", body]
+            return [200, "application/octet-stream", body]
+        except Exception as e:
+            return [500, "text/plain", str(e).encode("utf-8")]
 
     def destroy(self):
         self.options = {}
